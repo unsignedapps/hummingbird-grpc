@@ -56,10 +56,7 @@ struct GRPCChannelInitializer: HBChannelInitializer {
                 logger: logger
             )
             return streamChannel.pipeline.addHandler(handler)
-                .flatMap { _ in
-                    streamChannel.pipeline.addHandlers(childHandlers)
-                }
-                    .map { _ in }
+                .map { _ in }
         }
             .map { _ in }
     }
