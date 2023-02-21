@@ -36,6 +36,7 @@ let package = Package(
                 .product(name: "GRPC", package: "grpc-swift"),
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdCore", package: "hummingbird-core"),
+                .product(name: "HummingbirdHTTP2", package: "hummingbird-core"),
             ]
         ),
         .testTarget(

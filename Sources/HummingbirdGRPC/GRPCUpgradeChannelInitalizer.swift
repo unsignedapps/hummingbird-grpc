@@ -11,6 +11,7 @@
 
 import GRPC
 import HummingbirdCore
+import HummingbirdHTTP2
 import Logging
 import NIOCore
 import NIOHTTP1
