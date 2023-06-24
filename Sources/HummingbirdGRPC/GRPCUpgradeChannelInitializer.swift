@@ -14,8 +14,8 @@ import HummingbirdCore
 import Logging
 import NIOCore
 
-/// GRPC-only channel initialiser
-struct GRPCChannelInitializer: HBChannelInitializer {
+/// GRPC upgrade channel initialiser
+struct GRPCUpgradeChannelInitializer: HBChannelInitializer {
 
     // MARK: - Properties
 
@@ -45,17 +45,11 @@ struct GRPCChannelInitializer: HBChannelInitializer {
         configuration: HBHTTPServer.Configuration
     ) -> EventLoopFuture<Void> {
         channel.configureHTTP2Pipeline(mode: .server) { streamChannel in
-            let handler = HTTP2ToRawGRPCServerCodec(
-                servicesByName: services().reduce(into: [Substring: CallHandlerProvider]()) { result, provider in
-                    result[provider.serviceName] = provider
-                },
-                encoding: grpcConfiguration.encoding,
-                errorDelegate: grpcConfiguration.errorDelegate,
-                normalizeHeaders: grpcConfiguration.normalizeHeaders,
-                maximumReceiveMessageLength: grpcConfiguration.maximumReceiveMessageLength,
-                logger: logger
-            )
+            let handler = GRPCUpgradeChannel(grpcConfiguration: grpcConfiguration, logger: logger, services: services)
             return streamChannel.pipeline.addHandler(handler)
+                .flatMap { _ in
+                    streamChannel.pipeline.addHandlers(childHandlers)
+                }
                 .map { _ in }
         }
             .map { _ in }

@@ -43,7 +43,7 @@ public extension HBHTTPServer {
         tlsConfiguration.applicationProtocols.append("http/1.1")
         let sslContext = try NIOSSLContext(configuration: tlsConfiguration)
 
-        self.httpChannelInitializer = GRPCUpgradeChannelInitalizer(
+        self.httpChannelInitializer = GRPCALPNChannelInitalizer(
             configuration: grpcConfiguration,
             logger: logger,
             services: services

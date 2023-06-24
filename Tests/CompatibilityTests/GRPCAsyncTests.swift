@@ -48,10 +48,8 @@ final class GRPCMethodAsyncTests: XCTestCase {
 
         // WHEN we call the get RPC
         // THEN it should succeed
-        XCTAssertNoThrow {
-            let result = try await client.get(.with { $0.text = "Test gRPC Request!" })
-            XCTAssertEqual(result.text, "Swift echo get: Test gRPC Request!")
-        }
+        let result = try await client.get(.with { $0.text = "Test gRPC Request!" })
+        XCTAssertEqual(result.text, "Swift echo get: Test gRPC Request!")
 
     }
 
@@ -79,13 +77,11 @@ final class GRPCMethodAsyncTests: XCTestCase {
 
         // WHEN we call the expand RPC and collect the results
         // THEN it should receive those streaming messages
-        XCTAssertNoThrow {
-            let messages = try await client.expand(.with { $0.text = "Please Expand." }).collect()
+        let messages = try await client.expand(.with { $0.text = "Please Expand." }).collect()
 
-            XCTAssertEqual(messages.count, 2)
-            XCTAssertEqual(messages.first?.text, "Swift echo expand (0): Please")
-            XCTAssertEqual(messages.last?.text, "Swift echo expand (1): Expand.")
-        }
+        XCTAssertEqual(messages.count, 2)
+        XCTAssertEqual(messages.first?.text, "Swift echo expand (0): Please")
+        XCTAssertEqual(messages.last?.text, "Swift echo expand (1): Expand.")
 
     }
 

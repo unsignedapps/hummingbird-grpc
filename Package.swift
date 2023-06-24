@@ -20,7 +20,7 @@ let package = Package(
     // MARK: - Source Dependencies
 
     dependencies: [
-        .package(url: "https://github.com/unsignedapps/grpc-swift.git", from: "1.14.0"),
+        .package(url: "https://github.com/unsignedapps/grpc-swift.git", from: "1.17.1"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.15.0"),
         .package(url: "https://github.com/hummingbird-project/hummingbird-core.git", from: "1.1.1"),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "1.0.0"),

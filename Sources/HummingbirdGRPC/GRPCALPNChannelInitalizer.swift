@@ -19,13 +19,13 @@ import NIOHTTP2
 import NIOTLS
 
 /// GRPC upgrade channel initializer
-struct GRPCUpgradeChannelInitalizer: HBChannelInitializer {
+struct GRPCALPNChannelInitalizer: HBChannelInitializer {
 
     // MARK: - Properties
 
     let grpc: GRPCChannelInitializer
     let http1 = HTTP1ChannelInitializer()
-    let http2 = HTTP2ChannelInitializer()
+    let http2: GRPCUpgradeChannelInitializer
 
 
     // MARK: - Initialization
@@ -36,6 +36,7 @@ struct GRPCUpgradeChannelInitalizer: HBChannelInitializer {
         services: @escaping () -> [CallHandlerProvider]
     ) {
         self.grpc = GRPCChannelInitializer(configuration: configuration, logger: logger, services: services)
+        self.http2 = GRPCUpgradeChannelInitializer(configuration: configuration, logger: logger, services: services)
     }
 
 
