@@ -14,6 +14,9 @@ Hummingbird gRPC supports:
 - grpc-swift generated server providers.
 - proto2 and proto3.
 
+>[!Note]
+>From version 0.0.4 Hummingbird gRPC supports Swift 5.10+ and requires Hummingbird 2.0.0-rc.2 and grpc-swift 1.23.0+.
+
 Hummingbird gRPC does not currently support:
 
 - gRPC using JSON or other serialization formats.
