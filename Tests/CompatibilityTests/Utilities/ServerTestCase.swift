@@ -36,8 +36,8 @@ class ServerTestCase: XCTestCase {
         serverBuilder: (inout GRPCServerBuilder) -> Void = { $0.addServiceProvider(EchoProvider()) },
         file: StaticString = #file,
         line: UInt = #line
-    ) throws -> Application<RouterResponder<BasicRequestContext>> {
-        guard SampleCertificate.server.isExpired == false else {
+    ) async throws -> Application<RouterResponder<BasicRequestContext>> {
+        guard await SampleCertificate.server.isExpired == false else {
             throw ServerError.certificateExpired
         }
 
@@ -47,7 +47,7 @@ class ServerTestCase: XCTestCase {
         var server = GRPCServerBuilder()
         serverBuilder(&server)
 
-        let app = try Application(
+        let app = try await Application(
             router: router,
             server: .grpc(
                 serverBuilder: server,
@@ -81,8 +81,12 @@ class ServerTestCase: XCTestCase {
         return app
     }
 
-    func makeAsyncGRPCClient(app: Application<RouterResponder<BasicRequestContext>>, port: Int) -> Echo_EchoAsyncClient {
-        let channel = ClientConnection.usingPlatformAppropriateTLS(for: app.eventLoopGroup)
+    func makeAsyncGRPCClient(app: Application<RouterResponder<BasicRequestContext>>, port: Int) async throws -> Echo_EchoAsyncClient {
+        guard await SampleCertificate.ca.isExpired == false else {
+            throw ServerError.certificateExpired
+        }
+
+        let channel = await ClientConnection.usingPlatformAppropriateTLS(for: app.eventLoopGroup)
             .withTLS(trustRoots: .certificates([
                 SampleCertificate.ca.certificate,
             ]))
@@ -91,8 +95,12 @@ class ServerTestCase: XCTestCase {
         return Echo_EchoAsyncClient(channel: channel)
     }
 
-    func makeNIOGRPCClient(app: Application<RouterResponder<BasicRequestContext>>, port: Int) -> Echo_EchoNIOClient {
-        let channel = ClientConnection.usingPlatformAppropriateTLS(for: app.eventLoopGroup)
+    func makeNIOGRPCClient(app: Application<RouterResponder<BasicRequestContext>>, port: Int) async throws -> Echo_EchoNIOClient {
+        guard await SampleCertificate.ca.isExpired == false else {
+            throw ServerError.certificateExpired
+        }
+
+        let channel = await ClientConnection.usingPlatformAppropriateTLS(for: app.eventLoopGroup)
             .withTLS(trustRoots: .certificates([
                 SampleCertificate.ca.certificate,
             ]))
@@ -101,9 +109,13 @@ class ServerTestCase: XCTestCase {
         return Echo_EchoNIOClient(channel: channel)
     }
 
-    func makeHTTPClient(_ version: HTTPClient.Configuration.HTTPVersion) -> HTTPClient {
+    func makeHTTPClient(_ version: HTTPClient.Configuration.HTTPVersion) async throws -> HTTPClient {
+        guard await SampleCertificate.ca.isExpired == false else {
+            throw ServerError.certificateExpired
+        }
+
         var tls = TLSConfiguration.makeClientConfiguration()
-        tls.trustRoots = .certificates([ SampleCertificate.ca.certificate ])
+        tls.trustRoots = await .certificates([ SampleCertificate.ca.certificate ])
         tls.certificateVerification = .none
 
         var configuration = HTTPClient.Configuration(tlsConfiguration: tls)

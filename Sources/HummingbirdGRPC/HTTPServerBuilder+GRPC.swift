@@ -30,7 +30,7 @@ public extension HTTPServerBuilder {
 
         return .init { responder in
             GRPCNegotiationChannel(
-                services: { serverBuilder.serviceProviders },
+                serverBuilder: serverBuilder,
                 grpcConfiguration: grpcConfiguration,
                 sslContext: sslContext,
                 responder: responder

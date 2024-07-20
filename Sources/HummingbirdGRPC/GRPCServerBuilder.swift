@@ -13,13 +13,16 @@ import GRPC
 import Hummingbird
 import HummingbirdCore
 import HummingbirdHTTP2
+import NIOConcurrencyHelpers
 import NIOSSL
 import SwiftProtobuf
 
 /// A builder type that supports the setup and configuration of grpc-swift support.
-public final class GRPCServerBuilder {
+public final class GRPCServerBuilder: Sendable {
 
-    var serviceProviders = [any CallHandlerProvider]()
+    public typealias SendableCallHandlerProvider = CallHandlerProvider & Sendable
+
+    let serviceProviders = NIOLockedValueBox([any SendableCallHandlerProvider]())
 
 
     // MARK: - Initialsiation
@@ -31,15 +34,27 @@ public final class GRPCServerBuilder {
     // MARK: - Services Providers
 
     @discardableResult
-    public func addServiceProvider(_ provider: CallHandlerProvider) -> GRPCServerBuilder {
-        serviceProviders.append(provider)
+    public func addServiceProvider(_ provider: any SendableCallHandlerProvider) -> GRPCServerBuilder {
+        serviceProviders.withLockedValue {
+            $0.append(provider)
+        }
         return self
     }
 
     @discardableResult
-    public func addServiceProviders(_ providers: [CallHandlerProvider]) -> GRPCServerBuilder {
-        serviceProviders.append(contentsOf: providers)
+    public func addServiceProviders(_ providers: [any SendableCallHandlerProvider]) -> GRPCServerBuilder {
+        serviceProviders.withLockedValue {
+            $0.append(contentsOf: providers)
+        }
         return self
+    }
+
+    public func servicesByName() -> [Substring: CallHandlerProvider] {
+        serviceProviders.withLockedValue {
+            $0.reduce(into: [Substring: CallHandlerProvider]()) { result, provider in
+                result[provider.serviceName] = provider
+            }
+        }
     }
 
 }

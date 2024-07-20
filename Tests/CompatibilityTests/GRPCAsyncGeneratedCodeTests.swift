@@ -26,10 +26,10 @@ final class GRPCAsyncGeneratedCodeTests: ServerTestCase {
     func testUnaryCall() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try startServer(port: 9001)
+        let app = try await startServer(port: 9001)
 
         // AND GIVEN a grpc-swift client
-        let client = makeAsyncGRPCClient(app: app, port: 9001)
+        let client = try await makeAsyncGRPCClient(app: app, port: 9001)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -45,10 +45,10 @@ final class GRPCAsyncGeneratedCodeTests: ServerTestCase {
     func testServerStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try startServer(port: 9002)
+        let app = try await startServer(port: 9002)
 
         // AND GIVEN a grpc-swift client
-        let client = makeAsyncGRPCClient(app: app, port: 9002)
+        let client = try await makeAsyncGRPCClient(app: app, port: 9002)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -71,10 +71,10 @@ final class GRPCAsyncGeneratedCodeTests: ServerTestCase {
     func testClientStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try startServer(port: 9003)
+        let app = try await startServer(port: 9003)
 
         // AND GIVEN a grpc-swift client
-        let client = makeAsyncGRPCClient(app: app, port: 9003)
+        let client = try await makeAsyncGRPCClient(app: app, port: 9003)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -97,10 +97,10 @@ final class GRPCAsyncGeneratedCodeTests: ServerTestCase {
     func testBidirectionalStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try startServer(port: 9004)
+        let app = try await startServer(port: 9004)
 
         // AND GIVEN a grpc-swift client
-        let client = makeAsyncGRPCClient(app: app, port: 9004)
+        let client = try await makeAsyncGRPCClient(app: app, port: 9004)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)

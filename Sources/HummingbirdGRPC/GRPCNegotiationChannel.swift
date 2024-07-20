@@ -28,7 +28,7 @@ public struct GRPCNegotiationChannel: HTTPChannelHandler {
 
     // MARK: - Properties
 
-    private let services: @Sendable () -> [CallHandlerProvider]
+    private let serverBuilder: GRPCServerBuilder
     private let grpcConfiguration: HTTPServerBuilder.GRPCConfiguration
     private let sslContext: NIOSSLContext
     private let additionalChannelHandlers: @Sendable () -> [any RemovableChannelHandler]
@@ -37,13 +37,13 @@ public struct GRPCNegotiationChannel: HTTPChannelHandler {
     // MARK: - Initialisation
 
     init(
-        services: @escaping @Sendable () -> [CallHandlerProvider],
+        serverBuilder: GRPCServerBuilder,
         grpcConfiguration: HTTPServerBuilder.GRPCConfiguration,
         sslContext: NIOSSLContext,
         additionalChannelHandlers: @escaping @Sendable () -> [any RemovableChannelHandler] = { [] },
         responder: @escaping HTTPChannelHandler.Responder
     ) {
-        self.services = services
+        self.serverBuilder = serverBuilder
         self.grpcConfiguration = grpcConfiguration
         self.sslContext = sslContext
         self.additionalChannelHandlers = additionalChannelHandlers
@@ -155,9 +155,7 @@ public struct GRPCNegotiationChannel: HTTPChannelHandler {
 
     private func makeGRPCChannelHandler(logger: Logger) -> some ChannelInboundHandler {
         HTTP2ToRawGRPCServerCodec(
-            servicesByName: services().reduce(into: [Substring: CallHandlerProvider]()) { result, provider in
-                result[provider.serviceName] = provider
-            },
+            servicesByName: serverBuilder.servicesByName(),
             encoding: grpcConfiguration.encoding,
             errorDelegate: grpcConfiguration.errorDelegate,
             normalizeHeaders: grpcConfiguration.normalizeHeaders,

@@ -43,6 +43,9 @@ let package = Package(
                 .product(name: "HummingbirdCore", package: "hummingbird"),
                 .product(name: "HummingbirdHTTP2", package: "hummingbird"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
             ]
         ),
         .testTarget(
@@ -50,6 +53,9 @@ let package = Package(
             dependencies: [
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .target(name: "HummingbirdGRPC"),
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
             ]
         ),
     ]

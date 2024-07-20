@@ -11,18 +11,18 @@
 
 import GRPC
 
-final class HBCallHandlerProvider: CallHandlerProvider {
+final class HBCallHandlerProvider: CallHandlerProvider & Sendable {
 
     // MARK: - Properties
 
     let serviceName: Substring
     let method: Substring
-    let handlerFactory: (CallHandlerContext) -> GRPCServerHandlerProtocol
+    let handlerFactory: @Sendable (CallHandlerContext) -> GRPCServerHandlerProtocol
 
 
     // MARK: - Initialisation
 
-    init(serviceName: String, method: String, handlerFactory: @escaping (CallHandlerContext) -> GRPCServerHandlerProtocol) {
+    init(serviceName: String, method: String, handlerFactory: @escaping @Sendable (CallHandlerContext) -> GRPCServerHandlerProtocol) {
         self.serviceName = serviceName[...]
         self.method = method[...]
         self.handlerFactory = handlerFactory

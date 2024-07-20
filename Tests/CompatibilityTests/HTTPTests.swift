@@ -23,7 +23,7 @@ final class HTTPTests: ServerTestCase {
     func testHttp2Post() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        try startServer(port: 8081) {
+        try await startServer(port: 8081) {
 
             // AND GIVEN a route on that that responds
             $0.post("/echo") { request, context async throws -> String in
@@ -34,7 +34,7 @@ final class HTTPTests: ServerTestCase {
         }
 
         // AND GIVEN a HTTP client
-        let client = makeHTTPClient(.automatic)
+        let client = try await makeHTTPClient(.automatic)
         defer { XCTAssertNoThrow(try client.syncShutdown()) }
 
         // WHEN we make a request
@@ -49,7 +49,7 @@ final class HTTPTests: ServerTestCase {
     func testHttp11Post() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        try startServer(port: 8082) {
+        try await startServer(port: 8082) {
 
             // AND GIVEN a route on that that responds
             $0.post("/echo") { request, context async throws -> String in
@@ -60,7 +60,7 @@ final class HTTPTests: ServerTestCase {
         }
 
         // AND GIVEN a HTTP client
-        let client = makeHTTPClient(.http1Only)
+        let client = try await makeHTTPClient(.http1Only)
         defer { XCTAssertNoThrow(try client.syncShutdown()) }
 
         // WHEN we make a request

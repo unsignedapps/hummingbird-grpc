@@ -12,6 +12,7 @@
 import GRPC
 import Hummingbird
 import HummingbirdGRPC
+import NIOConcurrencyHelpers
 import NIOCore
 import NIOPosix
 import NIOSSL
@@ -23,10 +24,10 @@ import XCTest
 
 final class GRPCMethodNIOTests: ServerTestCase {
 
-    func testUnaryCall() throws {
+    func testUnaryCall() async throws {
 
         // GIVEN an HBApplication with gRPC support and a route that echos the input
-        let app = try startServer(port: 9030, serverBuilder:  {
+        let app = try await startServer(port: 9030, serverBuilder:  {
             $0.onUnary("echo.Echo", "Get", requestType: Echo_EchoRequest.self) { request, context in
                 let response = Echo_EchoResponse.with {
                     $0.text = "Swift echo get: " + request.text
@@ -36,14 +37,14 @@ final class GRPCMethodNIOTests: ServerTestCase {
         })
 
         // AND GIVEN a grpc-swift client
-        let client = makeNIOGRPCClient(app: app, port: 9030)
+        let client = try await makeNIOGRPCClient(app: app, port: 9030)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         defer {
             XCTAssertNoThrow(try group.syncShutdownGracefully())
         }
-        var promise = TimeoutPromise<Echo_EchoResponse>(count: 1, eventLoop: group.next(), timeout: .seconds(5))
+        let promise = TimeoutPromise<Echo_EchoResponse>(count: 1, eventLoop: group.next(), timeout: .seconds(5))
 
         // WHEN we call the get RPC
         client.get(.with { $0.text = "Test gRPC Request!" })
@@ -62,10 +63,10 @@ final class GRPCMethodNIOTests: ServerTestCase {
 
     }
 
-    func testServerStreamingCall() throws {
+    func testServerStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support and a route that expands the input
-        let app = try startServer(port: 9031, serverBuilder: {
+        let app = try await startServer(port: 9031, serverBuilder: {
             $0.onServerStream("echo.Echo", "Expand", requestType: Echo_EchoRequest.self) { request, context in
                 let responses = request.text.components(separatedBy: " ").lazy.enumerated().map { i, part in
                     Echo_EchoResponse.with {
@@ -79,15 +80,15 @@ final class GRPCMethodNIOTests: ServerTestCase {
         })
 
         // AND GIVEN a grpc-swift client
-        let client = makeNIOGRPCClient(app: app, port: 9031)
+        let client = try await makeNIOGRPCClient(app: app, port: 9031)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         defer {
             XCTAssertNoThrow(try group.syncShutdownGracefully())
         }
-        var receivedMessages = TimeoutPromise<Echo_EchoResponse>(count: 2, eventLoop: group.next(), timeout: .seconds(5))
-        var completed = TimeoutPromise<GRPCStatus>(count: 1, eventLoop: group.next(), timeout: .seconds(5))
+        let receivedMessages = TimeoutPromise<Echo_EchoResponse>(count: 2, eventLoop: group.next(), timeout: .seconds(5))
+        let completed = TimeoutPromise<GRPCStatus>(count: 1, eventLoop: group.next(), timeout: .seconds(5))
 
         // WHEN we call the expand RPC and collect the results
         client.expand(.with { $0.text = "Please Expand." }) {
@@ -114,10 +115,10 @@ final class GRPCMethodNIOTests: ServerTestCase {
 
     }
 
-    func testClientStreamingCall() throws {
+    func testClientStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support and a route that collects the input
-        let app = try startServer(port: 9032, serverBuilder: {
+        let app = try await startServer(port: 9032, serverBuilder: {
             $0.onClientStream("echo.Echo", "Collect", requestType: Echo_EchoRequest.self) { context in
                 var parts: [String] = []
                 return context.eventLoop.makeSucceededFuture({ event in
@@ -136,14 +137,14 @@ final class GRPCMethodNIOTests: ServerTestCase {
         })
 
         // AND GIVEN a grpc-swift client
-        let client = makeNIOGRPCClient(app: app, port: 9032)
+        let client = try await makeNIOGRPCClient(app: app, port: 9032)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         defer {
             XCTAssertNoThrow(try group.syncShutdownGracefully())
         }
-        var promise = TimeoutPromise<Echo_EchoResponse>(count: 1, eventLoop: group.next(), timeout: .seconds(5))
+        let promise = TimeoutPromise<Echo_EchoResponse>(count: 1, eventLoop: group.next(), timeout: .seconds(5))
 
         // AND GIVEN a call to the collect RPC
         let call = client.collect()
@@ -171,10 +172,10 @@ final class GRPCMethodNIOTests: ServerTestCase {
 
     }
 
-    func testBidirectionalStreamingCall() throws {
+    func testBidirectionalStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support and a route that echos the input
-        let app = try startServer(port: 9033, serverBuilder: {
+        let app = try await startServer(port: 9033, serverBuilder: {
             $0.onBidirectionalStream("echo.Echo", "Update", requestType: Echo_EchoRequest.self) { context in
                 var count = 0
                 return context.eventLoop.makeSucceededFuture({ event in
@@ -194,15 +195,15 @@ final class GRPCMethodNIOTests: ServerTestCase {
         })
 
         // AND GIVEN a grpc-swift client
-        let client = makeNIOGRPCClient(app: app, port: 9033)
+        let client = try await makeNIOGRPCClient(app: app, port: 9033)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         defer {
             XCTAssertNoThrow(try group.syncShutdownGracefully())
         }
-        var receivedMessages = TimeoutPromise<Echo_EchoResponse>(count: 2, eventLoop: group.next(), timeout: .seconds(5))
-        var completed = TimeoutPromise<GRPCStatus>(count: 1, eventLoop: group.next(), timeout: .seconds(5))
+        let receivedMessages = TimeoutPromise<Echo_EchoResponse>(count: 2, eventLoop: group.next(), timeout: .seconds(5))
+        let completed = TimeoutPromise<GRPCStatus>(count: 1, eventLoop: group.next(), timeout: .seconds(5))
 
         // AND GIVEN a call to the update RPC
         let call = client.update {
@@ -243,12 +244,12 @@ final class GRPCMethodNIOTests: ServerTestCase {
 
 private extension GRPCMethodNIOTests {
 
-    struct TimeoutPromise<Value> {
+    final class TimeoutPromise<Value: Sendable>: Sendable {
         let task: Scheduled<Void>
         let promise: EventLoopPromise<[Value]>
 
         let count: Int
-        var values = [Value]()
+        let values = NIOLockedValueBox([Value]())
 
         init(count: Int, eventLoop: EventLoop, timeout: TimeAmount) {
             self.count = count
@@ -257,10 +258,12 @@ private extension GRPCMethodNIOTests {
             self.task = eventLoop.scheduleTask(in: timeout) { promise.fail(ChannelError.connectTimeout(timeout)) }
         }
 
-        mutating func succeed(_ value: Value) {
-            values.append(value)
-            if values.count >= count {
-                promise.succeed(values)
+        func succeed(_ value: Value) {
+            values.withLockedValue {
+                $0.append(value)
+                if $0.count >= count {
+                    promise.succeed($0)
+                }
             }
         }
 

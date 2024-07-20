@@ -25,6 +25,7 @@ import struct Foundation.Date
 import NIOSSL
 
 /// Wraps `NIOSSLCertificate` to provide the certificate common name and expiry date.
+@MainActor
 public struct SampleCertificate {
   public var certificate: NIOSSLCertificate
   public var commonName: String

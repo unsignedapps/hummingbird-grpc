@@ -51,7 +51,7 @@ public extension GRPCServerBuilder {
         requestType: Request.Type = Request.self,
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
-        handler: @escaping (Request, StatusOnlyCallContext) -> EventLoopFuture<Response>
+        handler: @escaping @Sendable (Request, StatusOnlyCallContext) -> EventLoopFuture<Response>
     ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             UnaryServerHandler(
@@ -105,7 +105,7 @@ public extension GRPCServerBuilder {
         requestType: Request.Type = Request.self,
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
-        handler: @escaping (Request, StreamingResponseCallContext<Response>) -> EventLoopFuture<GRPCStatus>
+        handler: @escaping @Sendable (Request, StreamingResponseCallContext<Response>) -> EventLoopFuture<GRPCStatus>
     ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             ServerStreamingServerHandler(
@@ -165,7 +165,7 @@ public extension GRPCServerBuilder {
         requestType: Request.Type = Request.self,
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
-        handler: @escaping (UnaryResponseCallContext<Response>) -> EventLoopFuture<(StreamEvent<Request>) -> Void>
+        handler: @escaping @Sendable (UnaryResponseCallContext<Response>) -> EventLoopFuture<(StreamEvent<Request>) -> Void>
     ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             ClientStreamingServerHandler(
@@ -226,7 +226,7 @@ public extension GRPCServerBuilder {
         requestType: Request.Type = Request.self,
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
-        handler: @escaping (StreamingResponseCallContext<Response>) -> EventLoopFuture<(StreamEvent<Request>) -> Void>
+        handler: @escaping @Sendable (StreamingResponseCallContext<Response>) -> EventLoopFuture<(StreamEvent<Request>) -> Void>
     ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             BidirectionalStreamingServerHandler(
