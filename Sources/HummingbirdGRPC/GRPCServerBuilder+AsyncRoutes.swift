@@ -16,7 +16,7 @@ import Hummingbird
 import SwiftProtobuf
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension HBApplication.GRPCServerBuilder {
+public extension GRPCServerBuilder {
 
     /// Registers the supplied handler for the given unary gRPC service and method name.
     ///
@@ -53,7 +53,7 @@ public extension HBApplication.GRPCServerBuilder {
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
         handler: @Sendable @escaping (Request, GRPCAsyncServerCallContext) async throws -> Response
-    ) -> HBApplication.GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
+    ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             GRPCAsyncServerHandler(
                 context: context,
@@ -103,7 +103,7 @@ public extension HBApplication.GRPCServerBuilder {
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
         handler: @Sendable @escaping (Request, GRPCAsyncResponseStreamWriter<Response>, GRPCAsyncServerCallContext) async throws -> Void
-    ) -> HBApplication.GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
+    ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             GRPCAsyncServerHandler(
                 context: context,
@@ -154,7 +154,7 @@ public extension HBApplication.GRPCServerBuilder {
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
         handler: @Sendable @escaping (GRPCAsyncRequestStream<Request>, GRPCAsyncServerCallContext) async throws -> Response
-    ) -> HBApplication.GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
+    ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             GRPCAsyncServerHandler(
                 context: context,
@@ -207,7 +207,7 @@ public extension HBApplication.GRPCServerBuilder {
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
         handler: @Sendable @escaping (GRPCAsyncRequestStream<Request>, GRPCAsyncResponseStreamWriter<Response>, GRPCAsyncServerCallContext) async throws -> Void
-    ) -> HBApplication.GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
+    ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             GRPCAsyncServerHandler(
                 context: context,

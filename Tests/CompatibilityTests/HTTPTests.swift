@@ -18,28 +18,28 @@ import XCTest
 // These tests are designed to ensure we did not destroy basic support
 // for HTTP/2 or HTTP/1.1 by building gRPC over the top
 
-final class HTTPTests: XCTestCase {
+final class HTTPTests: ServerTestCase {
 
     func testHttp2Post() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 8080)
+        try startServer(port: 8081) {
 
-        // AND GIVEN a route on that that responds
-        app.router.post("/echo") { request async throws -> String in
-            let string = try await request.collatedBodyString()
-            return "HTTP Response: \(string)"
+            // AND GIVEN a route on that that responds
+            $0.post("/echo") { request, context async throws -> String in
+                var request = request
+                let string = try await request.collatedBodyString(context: context)
+                return "HTTP Response: \(string)"
+            }
         }
-        try app.start()
-        defer { app.stop() }
 
         // AND GIVEN a HTTP client
-        let client = makeClient(.automatic)
+        let client = makeHTTPClient(.automatic)
         defer { XCTAssertNoThrow(try client.syncShutdown()) }
 
         // WHEN we make a request
         // THEN it should succeed
-        let response = try await client.post(url: "https://localhost:8080/echo", body: .string("Test HTTP/2 Request!")).get()
+        let response = try await client.post(url: "https://127.0.0.1:8081/echo", body: .string("Test HTTP/2 Request!")).get()
 
         // AND the response should match
         XCTAssertEqual(response.bodyString, "HTTP Response: Test HTTP/2 Request!")
@@ -49,23 +49,23 @@ final class HTTPTests: XCTestCase {
     func testHttp11Post() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 8081)
+        try startServer(port: 8082) {
 
-        // AND GIVEN a route on that that responds
-        app.router.post("/echo") { request async throws -> String in
-            let string = try await request.collatedBodyString()
-            return "HTTP Response: \(string)"
+            // AND GIVEN a route on that that responds
+            $0.post("/echo") { request, context async throws -> String in
+                var request = request
+                let string = try await request.collatedBodyString(context: context)
+                return "HTTP Response: \(string)"
+            }
         }
-        try app.start()
-        defer { app.stop() }
 
         // AND GIVEN a HTTP client
-        let client = makeClient(.http1Only)
+        let client = makeHTTPClient(.http1Only)
         defer { XCTAssertNoThrow(try client.syncShutdown()) }
 
         // WHEN we make a request
         // THEN it should succeed
-        let response = try await client.post(url: "https://localhost:8081/echo", body: .string("Test HTTP/1.1 Request!")).get()
+        let response = try await client.post(url: "https://127.0.0.1:8082/echo", body: .string("Test HTTP/1.1 Request!")).get()
 
         // AND the response should match
         XCTAssertEqual(response.bodyString, "HTTP Response: Test HTTP/1.1 Request!")
@@ -77,42 +77,10 @@ final class HTTPTests: XCTestCase {
 
 // MARK: - Fixtures
 
-private extension HTTPTests {
+private extension Request {
 
-    func makeEchoApplication(port: Int) throws -> HBApplication {
-        let app = HBApplication(configuration: .init(address: .hostname(port: port)))
-
-        try app.gRPC.addUpgrade(
-            configuration: .init(),
-            tlsConfiguration: .makeServerConfiguration(
-                certificateChain: [
-                    .certificate(SampleCertificate.server.certificate),
-                ],
-                privateKey: .privateKey(SamplePrivateKey.server)
-            )
-        )
-
-        return app
-    }
-
-    func makeClient(_ version: HTTPClient.Configuration.HTTPVersion) -> HTTPClient {
-        var tls = TLSConfiguration.makeClientConfiguration()
-        tls.trustRoots = .certificates([ SampleCertificate.ca.certificate ])
-        tls.certificateVerification = .none
-
-        var configuration = HTTPClient.Configuration(tlsConfiguration: tls)
-        configuration.httpVersion = version
-
-        return HTTPClient(eventLoopGroupProvider: .createNew, configuration: configuration)
-    }
-
-}
-
-private extension HBRequest {
-
-    func collatedBodyString() async throws -> String {
-        let maybeBody = try await collateBody().get().body.buffer
-        let body = try XCTUnwrap(maybeBody)
+    mutating func collatedBodyString(context: BasicRequestContext) async throws -> String {
+        let body = try await collectBody(upTo: context.maxUploadSize)
         return try XCTUnwrap(body.getString(at: 0, length: body.readableBytes))
     }
 

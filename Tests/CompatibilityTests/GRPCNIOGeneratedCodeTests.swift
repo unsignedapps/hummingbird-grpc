@@ -21,16 +21,15 @@ import XCTest
 // by starting a HBApplication with gRPC support, and then using a standard grpc-swift
 // client to connect and interact with it.
 
-final class GRPCNIOGeneratedCodeTests: XCTestCase {
+final class GRPCNIOGeneratedCodeTests: ServerTestCase {
 
     func testUnaryCall() throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 9020)
-        defer { app.stop() }
+        let app = try startServer(port: 9020)
 
         // AND GIVEN a grpc-swift client
-        let client = makeEchoClient(app: app)
+        let client = makeNIOGRPCClient(app: app, port: 9020)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -59,11 +58,10 @@ final class GRPCNIOGeneratedCodeTests: XCTestCase {
     func testServerStreamingCall() throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 9021)
-        defer { app.stop() }
+        let app = try startServer(port: 9021)
 
         // AND GIVEN a grpc-swift client
-        let client = makeEchoClient(app: app)
+        let client = makeNIOGRPCClient(app: app, port: 9021)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -101,11 +99,10 @@ final class GRPCNIOGeneratedCodeTests: XCTestCase {
     func testClientStreamingCall() throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 9022)
-        defer { app.stop() }
+        let app = try startServer(port: 9022)
 
         // AND GIVEN a grpc-swift client
-        let client = makeEchoClient(app: app)
+        let client = makeNIOGRPCClient(app: app, port: 9022)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -143,11 +140,10 @@ final class GRPCNIOGeneratedCodeTests: XCTestCase {
     func testBidirectionalStreamingCall() throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 9023)
-        defer { app.stop() }
+        let app = try startServer(port: 9023)
 
         // AND GIVEN a grpc-swift client
-        let client = makeEchoClient(app: app)
+        let client = makeNIOGRPCClient(app: app, port: 9023)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -193,37 +189,6 @@ final class GRPCNIOGeneratedCodeTests: XCTestCase {
 }
 
 // MARK: - Fixtures
-
-private extension GRPCNIOGeneratedCodeTests {
-
-    func makeEchoApplication(port: Int) throws -> HBApplication {
-        let app = HBApplication(configuration: .init(address: .hostname(port: port)))
-
-        app.gRPC.addServiceProvider(EchoProvider())
-        try app.gRPC.addUpgrade(
-            configuration: .init(),
-            tlsConfiguration: .makeServerConfiguration(
-                certificateChain: [
-                    .certificate(SampleCertificate.server.certificate),
-                ],
-                privateKey: .privateKey(SamplePrivateKey.server)
-            )
-        )
-        try app.start()
-        return app
-    }
-
-    func makeEchoClient(app: HBApplication) -> Echo_EchoNIOClient {
-        let channel = ClientConnection.usingPlatformAppropriateTLS(for: app.eventLoopGroup)
-            .withTLS(trustRoots: .certificates([
-                SampleCertificate.ca.certificate,
-            ]))
-            .withTLS(certificateVerification: .fullVerification)
-            .connect(host: "localhost", port: app.configuration.address.port ?? 8080)
-        return Echo_EchoNIOClient(channel: channel)
-    }
-
-}
 
 private extension GRPCNIOGeneratedCodeTests {
 

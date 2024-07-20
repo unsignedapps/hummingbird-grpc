@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -9,6 +9,11 @@ let package = Package(
 
     name: "hummingbird-grpc",
 
+    platforms: [
+        .iOS(.v17),
+        .macOS(.v14),
+        .tvOS(.v17)
+    ],
 
     // MARK: - Products
 
@@ -20,10 +25,10 @@ let package = Package(
     // MARK: - Source Dependencies
 
     dependencies: [
-        .package(url: "https://github.com/unsignedapps/grpc-swift.git", from: "1.17.1"),
-        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.15.0"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird-core.git", from: "1.1.1"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "1.0.0"),
+        .package(url: "https://github.com/unsignedapps/grpc-swift.git", from: "1.23.0"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.27.0"),
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.21.2"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0-rc.2"),
     ],
 
 
@@ -35,8 +40,9 @@ let package = Package(
             dependencies: [
                 .product(name: "GRPC", package: "grpc-swift"),
                 .product(name: "Hummingbird", package: "hummingbird"),
-                .product(name: "HummingbirdCore", package: "hummingbird-core"),
-                .product(name: "HummingbirdHTTP2", package: "hummingbird-core"),
+                .product(name: "HummingbirdCore", package: "hummingbird"),
+                .product(name: "HummingbirdHTTP2", package: "hummingbird"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
             ]
         ),
         .testTarget(

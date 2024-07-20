@@ -31,22 +31,19 @@ final class GRPCUpgradeChannel: ChannelDuplexHandler {
 
     // MARK: - Properties
 
-    private let grpcConfiguration: HBHTTPServer.GRPCConfiguration
-    private let logger: Logger
-    private let services: () -> [CallHandlerProvider]
+    private let grpcChannelHandler: any ChannelInboundHandler
+    private let http2ChannelHandler: any ChannelInboundHandler
 
     private var state = State.notConfigured
 
     // MARK: - Initialisation
 
     init(
-        grpcConfiguration: HBHTTPServer.GRPCConfiguration,
-        logger: Logger,
-        services: @escaping () -> [CallHandlerProvider]
+        grpcChannelHandler: some ChannelInboundHandler,
+        http2ChannelHandler: some ChannelInboundHandler
     ) {
-        self.grpcConfiguration = grpcConfiguration
-        self.logger = logger
-        self.services = services
+        self.grpcChannelHandler = grpcChannelHandler
+        self.http2ChannelHandler = http2ChannelHandler
     }
 
 
@@ -62,17 +59,16 @@ final class GRPCUpgradeChannel: ChannelDuplexHandler {
 
             switch payload {
             case let .headers(headers):
-                let channel: any ChannelInboundHandler
                 if let contentType = headers.headers["content-type"].first, contentType == "application/grpc" {
-                    channel = makeGRPCChannel()
+                    state = .configured(grpcChannelHandler)
+                    grpcChannelHandler.handlerAdded(context: context)
+                    grpcChannelHandler.channelRead(context: context, data: data)
 
                 } else {
-                    channel = makeHTTPChannel()
+                    state = .configured(http2ChannelHandler)
+                    http2ChannelHandler.handlerAdded(context: context)
+                    http2ChannelHandler.channelRead(context: context, data: data)
                 }
-
-                state = .configured(channel)
-                channel.handlerAdded(context: context)
-                channel.channelRead(context: context, data: data)
 
             default:
                 fatalError()
@@ -215,26 +211,6 @@ final class GRPCUpgradeChannel: ChannelDuplexHandler {
             return
         }
         outbound.triggerUserOutboundEvent(context: context, event: event, promise: promise)
-    }
-
-
-    // MARK: - Child Handlers
-
-    private func makeGRPCChannel() -> HTTP2ToRawGRPCServerCodec{
-        HTTP2ToRawGRPCServerCodec(
-            servicesByName: services().reduce(into: [Substring: CallHandlerProvider]()) { result, provider in
-                result[provider.serviceName] = provider
-            },
-            encoding: grpcConfiguration.encoding,
-            errorDelegate: grpcConfiguration.errorDelegate,
-            normalizeHeaders: grpcConfiguration.normalizeHeaders,
-            maximumReceiveMessageLength: grpcConfiguration.maximumReceiveMessageLength,
-            logger: logger
-        )
-    }
-
-    private func makeHTTPChannel() -> HTTP2FramePayloadToHTTP1ServerCodec {
-        HTTP2FramePayloadToHTTP1ServerCodec()
     }
 
 }

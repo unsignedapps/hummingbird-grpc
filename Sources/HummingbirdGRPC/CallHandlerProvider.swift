@@ -1,6 +1,6 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright (c) 2023 Unsigned Apps
+// Copyright (c) 2024 Unsigned Apps
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information

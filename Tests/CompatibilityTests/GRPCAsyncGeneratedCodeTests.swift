@@ -21,40 +21,34 @@ import XCTest
 // by starting a HBApplication with gRPC support, and then using a standard grpc-swift
 // client to connect and interact with it.
 
-final class GRPCAsyncGeneratedCodeTests: XCTestCase {
+final class GRPCAsyncGeneratedCodeTests: ServerTestCase {
 
     func testUnaryCall() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 9000)
-        defer { app.stop() }
+        let app = try startServer(port: 9001)
 
         // AND GIVEN a grpc-swift client
-        let client = makeEchoClient(app: app)
+        let client = makeAsyncGRPCClient(app: app, port: 9001)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        defer {
-            XCTAssertNoThrow(try group.syncShutdownGracefully())
-        }
 
         // WHEN we call the get RPC
         // THEN it should succeed
-        XCTAssertNoThrow {
-            let result = try await client.get(.with { $0.text = "Test gRPC Request!" })
-            XCTAssertEqual(result.text, "Swift echo get: Test gRPC Request!")
-        }
+        let result = try await client.get(.with { $0.text = "Test gRPC Request!" })
+        XCTAssertEqual(result.text, "Swift echo get: Test gRPC Request!")
 
+        try await group.shutdownGracefully()
     }
 
     func testServerStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 9001)
-        defer { app.stop() }
+        let app = try startServer(port: 9002)
 
         // AND GIVEN a grpc-swift client
-        let client = makeEchoClient(app: app)
+        let client = makeAsyncGRPCClient(app: app, port: 9002)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -77,11 +71,10 @@ final class GRPCAsyncGeneratedCodeTests: XCTestCase {
     func testClientStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 9002)
-        defer { app.stop() }
+        let app = try startServer(port: 9003)
 
         // AND GIVEN a grpc-swift client
-        let client = makeEchoClient(app: app)
+        let client = makeAsyncGRPCClient(app: app, port: 9003)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -104,11 +97,10 @@ final class GRPCAsyncGeneratedCodeTests: XCTestCase {
     func testBidirectionalStreamingCall() async throws {
 
         // GIVEN an HBApplication with gRPC support
-        let app = try makeEchoApplication(port: 9003)
-        defer { app.stop() }
+        let app = try startServer(port: 9004)
 
         // AND GIVEN a grpc-swift client
-        let client = makeEchoClient(app: app)
+        let client = makeAsyncGRPCClient(app: app, port: 9004)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -128,39 +120,6 @@ final class GRPCAsyncGeneratedCodeTests: XCTestCase {
         XCTAssertEqual(messages.first?.text, "Swift echo update (0): First")
         XCTAssertEqual(messages.last?.text, "Swift echo update (1): Second")
 
-    }
-
-}
-
-// MARK: - Fixtures
-
-private extension GRPCAsyncGeneratedCodeTests {
-
-    func makeEchoApplication(port: Int) throws -> HBApplication {
-        let app = HBApplication(configuration: .init(address: .hostname(port: port)))
-
-        app.gRPC.addServiceProvider(EchoProvider())
-        try app.gRPC.addUpgrade(
-            configuration: .init(),
-            tlsConfiguration: .makeServerConfiguration(
-                certificateChain: [
-                    .certificate(SampleCertificate.server.certificate),
-                ],
-                privateKey: .privateKey(SamplePrivateKey.server)
-            )
-        )
-        try app.start()
-        return app
-    }
-
-    func makeEchoClient(app: HBApplication) -> Echo_EchoAsyncClient {
-        let channel = ClientConnection.usingPlatformAppropriateTLS(for: app.eventLoopGroup)
-            .withTLS(trustRoots: .certificates([
-                SampleCertificate.ca.certificate,
-            ]))
-            .withTLS(certificateVerification: .fullVerification)
-            .connect(host: "localhost", port: app.configuration.address.port ?? 8080)
-        return Echo_EchoAsyncClient(channel: channel)
     }
 
 }

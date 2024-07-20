@@ -11,9 +11,10 @@
 
 import GRPC
 import Hummingbird
+import NIOCore
 import SwiftProtobuf
 
-public extension HBApplication.GRPCServerBuilder {
+public extension GRPCServerBuilder {
 
     /// Registers the supplied handler for the given unary gRPC service and method name.
     ///
@@ -23,7 +24,7 @@ public extension HBApplication.GRPCServerBuilder {
     /// This overload supports SwiftNIO's `EventLoop`. Async overloads are also available.
     ///
     /// ```swift
-    /// let app = HBApplication()
+    /// let app = Application()
     ///
     /// // Registers a unary gRPC handler on `/echo.Echo/Get`
     /// app.gRPC.onUnary("echo.Echo", "Get", requestType: Echo_EchoRequest.self) { request, context in
@@ -51,7 +52,7 @@ public extension HBApplication.GRPCServerBuilder {
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
         handler: @escaping (Request, StatusOnlyCallContext) -> EventLoopFuture<Response>
-    ) -> HBApplication.GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
+    ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             UnaryServerHandler(
                 context: context,
@@ -105,7 +106,7 @@ public extension HBApplication.GRPCServerBuilder {
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
         handler: @escaping (Request, StreamingResponseCallContext<Response>) -> EventLoopFuture<GRPCStatus>
-    ) -> HBApplication.GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
+    ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             ServerStreamingServerHandler(
                 context: context,
@@ -165,7 +166,7 @@ public extension HBApplication.GRPCServerBuilder {
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
         handler: @escaping (UnaryResponseCallContext<Response>) -> EventLoopFuture<(StreamEvent<Request>) -> Void>
-    ) -> HBApplication.GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
+    ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             ClientStreamingServerHandler(
                 context: context,
@@ -226,7 +227,7 @@ public extension HBApplication.GRPCServerBuilder {
         responseType: Response.Type = Response.self,
         interceptors: [ServerInterceptor<Request, Response>] = [],
         handler: @escaping (StreamingResponseCallContext<Response>) -> EventLoopFuture<(StreamEvent<Request>) -> Void>
-    ) -> HBApplication.GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
+    ) -> GRPCServerBuilder where Request: SwiftProtobuf.Message, Response: SwiftProtobuf.Message {
         let provider = HBCallHandlerProvider(serviceName: serviceName, method: method) { context in
             BidirectionalStreamingServerHandler(
                 context: context,

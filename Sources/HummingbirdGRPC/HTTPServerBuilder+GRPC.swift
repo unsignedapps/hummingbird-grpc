@@ -1,6 +1,6 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright (c) 2023 Unsigned Apps
+// Copyright (c) 2024 Unsigned Apps
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -9,56 +9,42 @@
 //
 //===----------------------------------------------------------------------===//
 
-import GRPC
+@preconcurrency import GRPC
 import HummingbirdCore
 import Logging
 import NIOSSL
 
-public extension HBHTTPServer {
+public extension HTTPServerBuilder {
 
-    /// Add a gRPC secure upgrade handler to the server.
-    ///
-    /// gRPC support requires HTTP/2 and TLS so these handlers will be added as well.
-    /// Do not call `addTLS()` or `addHTTP2Upgrade(tlsConfiguration:)` in conjunction
-    /// with this as you will be adding multiple TLS and HTTP/2 handlers.
-    ///
-    /// This handler will route any channels that are negotiated as `grpc-exp` using ALPN to `grpc-swift`,
-    /// while connections negotiated as `h2` and `http/1.1` will be handled by Hummingbird.
-    ///
-    /// - Parameters:
-    ///   - services: A dictionary
-    ///   - grpcConfiguration: A configuration type used to setup the grpc-swift channels/codecs.
-    ///   - tlsConfiguration: A configuration type used to configure TLS for this server.
-    ///
-    @discardableResult
-    func addGRPCUpgrade(
-        services: @escaping () -> [CallHandlerProvider],
-        grpcConfiguration: GRPCConfiguration,
-        tlsConfiguration: TLSConfiguration,
-        logger: Logger
-    ) throws -> HBHTTPServer {
+    /// Build HTTP Channel with gRPC, HTTP2 and HTTP/1.1
+    static func grpc(
+        serverBuilder: GRPCServerBuilder,
+        grpcConfiguration: GRPCConfiguration = .init(),
+        tlsConfiguration: TLSConfiguration
+    ) throws -> HTTPServerBuilder {
         var tlsConfiguration = tlsConfiguration
         tlsConfiguration.applicationProtocols.append("grpc-exp")
         tlsConfiguration.applicationProtocols.append("h2")
         tlsConfiguration.applicationProtocols.append("http/1.1")
         let sslContext = try NIOSSLContext(configuration: tlsConfiguration)
 
-        self.httpChannelInitializer = GRPCALPNChannelInitalizer(
-            configuration: grpcConfiguration,
-            logger: logger,
-            services: services
-        )
-        return self.addTLSChannelHandler(NIOSSLServerHandler(context: sslContext))
+        return .init { responder in
+            GRPCNegotiationChannel(
+                services: { serverBuilder.serviceProviders },
+                grpcConfiguration: grpcConfiguration,
+                sslContext: sslContext,
+                responder: responder
+            )
+        }
     }
-
 }
 
 
 // MARK: - Configuration
 
-public extension HBHTTPServer {
+public extension HTTPServerBuilder {
 
-    struct GRPCConfiguration {
+    struct GRPCConfiguration: Sendable {
 
         /// The compression configuration for requests and responses.
         ///
