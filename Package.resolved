@@ -1,5 +1,5 @@
 {
-  "originHash" : "028f6d55097d1f03a969d47c292d83728c530c8fa63c93beeb41e1de0dbee845",
+  "originHash" : "2c669c3403fb582acc68caebfff8781c0f397c23e3fa4dfd02eb2a3ac22c2e37",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/hummingbird-project/hummingbird.git",
       "state" : {
-        "revision" : "50f887ff416593b468cf238b9536f671786a1507",
-        "version" : "2.0.0-rc.2"
+        "revision" : "567c1fdcd577d3463a1406a34d9a64749bf583ec",
+        "version" : "2.9.0"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-async-algorithms.git",
       "state" : {
-        "revision" : "6ae9a051f76b81cc668305ceed5b0e0a7fd93d20",
-        "version" : "1.0.1"
+        "revision" : "4c3ea81f81f0a25d0470188459c6d4bf20cf2f97",
+        "version" : "1.0.3"
       }
     },
     {
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio-http2.git",
       "state" : {
-        "revision" : "a0224f3d20438635dd59c9fcc593520d80d131d0",
-        "version" : "1.33.0"
+        "revision" : "170f4ca06b6a9c57b811293cebcb96e81b661310",
+        "version" : "1.35.0"
       }
     },
     {

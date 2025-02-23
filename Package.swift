@@ -28,7 +28,7 @@ let package = Package(
         .package(url: "https://github.com/unsignedapps/grpc-swift.git", from: "1.23.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.27.0"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.21.2"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0-rc.2"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.9.0"),
     ],
 
 
@@ -54,7 +54,7 @@ let package = Package(
         ),
     ],
 
-    swiftLanguageVersions: [
+    swiftLanguageModes: [
         .v6,
     ]
 
