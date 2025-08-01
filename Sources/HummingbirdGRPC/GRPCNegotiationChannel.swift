@@ -64,11 +64,10 @@ public struct GRPCNegotiationChannel: HTTPChannelHandler {
             // How it should setup HTTP1 channels.
             // This is basically the same as Hummingbird's HTTP2UpgradeChannel HTTP1 code
             http1ConnectionInitializer: { http1Channel in
-                http1Channel.pipeline
-                    .addHandlers(
-                        [ makeHTTP1ChannelHandler() ]
-                            + makeAdditionalChannelHandlers(logger: logger)
-                    )
+                return http1Channel.pipeline.addHandler(makeHTTP1ChannelHandler())
+                    .flatMap {
+                        http1Channel.pipeline.addHandlers(makeAdditionalChannelHandlers(logger: logger))
+                    }
                     .flatMapThrowing {
                         try HTTP1Channel.Value(wrappingChannelSynchronously: http1Channel)
                     }

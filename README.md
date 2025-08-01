@@ -15,19 +15,21 @@ Hummingbird gRPC supports:
 - proto2 and proto3.
 
 >[!Note]
->From version 0.0.4 Hummingbird gRPC supports Swift 5.10+ and requires Hummingbird 2.0.0-rc.2 and grpc-swift 1.23.0+.
+>From version 0.0.5 Hummingbird gRPC supports Swift 6.0+ and requires Hummingbird 2.15.0+ and grpc-swift 1.23.0+.
 
 Hummingbird gRPC does not currently support:
 
 - gRPC using JSON or other serialization formats.
 - gRPC Web (HTTP/1.1).
-- Hummingbird middleware with gRPC.
+- Hummingbird middleware with gRPC endpoints.
 
 ## Implementation Details
 
-Hummingbird gRPC uses the TLS [Application-Later Protocol Negotiation](https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation) to decide how to handle an incoming HTTP/2 channel. If it is negoiateed as `grpc-exp` the channel will be handled directly by grpc-swift, if it is negotiated as vanilla `h2` (HTTP/2), `http/1.1`, or as anything else it will be handled by Hummingbird.
+Hummingbird gRPC uses the TLS [Application-Later Protocol Negotiation](https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation) to decide how to handle an incoming HTTP/2 channel. If it is negoiateed as `grpc-exp` or as `h2` (HTTP/2) with a Content-Type of `application/grpc` the channel will be handled directly by grpc-swift, if it is negotiated as `h2` (HTTP/2), with any other Content Type, as `http/1.1`, or as anything else it will be handled by Hummingbird.
 
-Currently this requires forking grpc-swift to make `HTTP2ToRawGRPCServerCodec` public, and copying the `HTTP2ChannelInitializer` from HummingbirdHTTP2, it is hoped both of the changes can be made upstream, allowing Hummingbird gRPC to work with the sources directly.
+Currently this requires forking grpc-swift to make `HTTP2ToRawGRPCServerCodec` public, it was hoped this change could be upstreamed so we could work directly with the official source but unfortunately grpc-swift 2.0.0 has gone in a different direction but it has embedded the their ways of working. We'd need to fork [grpc-swift-nio-transport](https://github.com/grpc/grpc-swift-nio-transport) instead of the whole thing, but a fork is a fork.
+
+On the Hummingbird side, our channel handling is 
 
 ## Usage
 
