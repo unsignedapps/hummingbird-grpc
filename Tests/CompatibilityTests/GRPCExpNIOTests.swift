@@ -22,15 +22,24 @@ import XCTest
 // by starting a HBApplication with gRPC support, and then using a standard grpc-swift
 // client to connect and interact with it.
 
-final class GRPCNIOGeneratedCodeTests: ServerTestCase {
+// These tests exercise grpc-exp protocol support.
+
+final class GRPCExpNIOTests: ServerTestCase {
 
     func testUnaryCall() async throws {
 
-        // GIVEN an HBApplication with gRPC support
-        let app = try await startServer(port: 9020)
+        // GIVEN an HBApplication with gRPC support and a route that echos the input
+        let app = try await startServer(port: 9030, serverBuilder: {
+            $0.onUnary("echo.Echo", "Get", requestType: Echo_EchoRequest.self) { request, context in
+                let response = Echo_EchoResponse.with {
+                    $0.text = "Swift echo get: " + request.text
+                }
+                return context.eventLoop.makeSucceededFuture(response)
+            }
+        })
 
         // AND GIVEN a grpc-swift client
-        let client = try await makeNIOGRPCClient(app: app, port: 9020)
+        let client = try await makeNIOGRPCClient(app: app, port: 9030, protocol: .grpcExp)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -58,11 +67,22 @@ final class GRPCNIOGeneratedCodeTests: ServerTestCase {
 
     func testServerStreamingCall() async throws {
 
-        // GIVEN an HBApplication with gRPC support
-        let app = try await startServer(port: 9021)
+        // GIVEN an HBApplication with gRPC support and a route that expands the input
+        let app = try await startServer(port: 9031, serverBuilder: {
+            $0.onServerStream("echo.Echo", "Expand", requestType: Echo_EchoRequest.self) { request, context in
+                let responses = request.text.components(separatedBy: " ").lazy.enumerated().map { i, part in
+                    Echo_EchoResponse.with {
+                        $0.text = "Swift echo expand (\(i)): \(part)"
+                    }
+                }
+                
+                context.sendResponses(responses, promise: nil)
+                return context.eventLoop.makeSucceededFuture(.ok)
+            }
+        })
 
         // AND GIVEN a grpc-swift client
-        let client = try await makeNIOGRPCClient(app: app, port: 9021)
+        let client = try await makeNIOGRPCClient(app: app, port: 9031, protocol: .grpcExp)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -99,11 +119,27 @@ final class GRPCNIOGeneratedCodeTests: ServerTestCase {
 
     func testClientStreamingCall() async throws {
 
-        // GIVEN an HBApplication with gRPC support
-        let app = try await startServer(port: 9022)
+        // GIVEN an HBApplication with gRPC support and a route that collects the input
+        let app = try await startServer(port: 9032, serverBuilder: {
+            $0.onClientStream("echo.Echo", "Collect", requestType: Echo_EchoRequest.self) { context in
+                var parts: [String] = []
+                return context.eventLoop.makeSucceededFuture({ event in
+                    switch event {
+                    case let .message(message):
+                        parts.append(message.text)
+                        
+                    case .end:
+                        let response = Echo_EchoResponse.with {
+                            $0.text = "Swift echo collect: " + parts.joined(separator: " ")
+                        }
+                        context.responsePromise.succeed(response)
+                    }
+                })
+            }
+        })
 
         // AND GIVEN a grpc-swift client
-        let client = try await makeNIOGRPCClient(app: app, port: 9022)
+        let client = try await makeNIOGRPCClient(app: app, port: 9032, protocol: .grpcExp)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -140,11 +176,28 @@ final class GRPCNIOGeneratedCodeTests: ServerTestCase {
 
     func testBidirectionalStreamingCall() async throws {
 
-        // GIVEN an HBApplication with gRPC support
-        let app = try await startServer(port: 9023)
+        // GIVEN an HBApplication with gRPC support and a route that echos the input
+        let app = try await startServer(port: 9033, serverBuilder: {
+            $0.onBidirectionalStream("echo.Echo", "Update", requestType: Echo_EchoRequest.self) { context in
+                var count = 0
+                return context.eventLoop.makeSucceededFuture({ event in
+                    switch event {
+                    case let .message(message):
+                        let response = Echo_EchoResponse.with {
+                            $0.text = "Swift echo update (\(count)): \(message.text)"
+                        }
+                        count += 1
+                        context.sendResponse(response, promise: nil)
+                        
+                    case .end:
+                        context.statusPromise.succeed(.ok)
+                    }
+                })
+            }
+        })
 
         // AND GIVEN a grpc-swift client
-        let client = try await makeNIOGRPCClient(app: app, port: 9023)
+        let client = try await makeNIOGRPCClient(app: app, port: 9033, protocol: .grpcExp)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -191,7 +244,7 @@ final class GRPCNIOGeneratedCodeTests: ServerTestCase {
 
 // MARK: - Fixtures
 
-private extension GRPCNIOGeneratedCodeTests {
+private extension GRPCExpNIOTests {
 
     final class TimeoutPromise<Value: Sendable>: Sendable {
         let task: Scheduled<Void>

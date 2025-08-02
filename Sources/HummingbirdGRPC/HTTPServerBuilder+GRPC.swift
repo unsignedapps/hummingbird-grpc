@@ -11,6 +11,7 @@
 
 @preconcurrency import GRPC
 import HummingbirdCore
+import HummingbirdHTTP2
 import Logging
 import NIOSSL
 
@@ -20,7 +21,9 @@ public extension HTTPServerBuilder {
     static func grpc(
         serverBuilder: GRPCServerBuilder,
         grpcConfiguration: GRPCConfiguration = .init(),
-        tlsConfiguration: TLSConfiguration
+        http2Configuration: HTTP2ChannelConfiguration = .init(),
+        tlsConfiguration: TLSConfiguration,
+        logger: Logger = Logger(label: "hummingbird-grpc")
     ) throws -> HTTPServerBuilder {
         var tlsConfiguration = tlsConfiguration
         tlsConfiguration.applicationProtocols.append("grpc-exp")
@@ -32,8 +35,10 @@ public extension HTTPServerBuilder {
             GRPCNegotiationChannel(
                 serverBuilder: serverBuilder,
                 grpcConfiguration: grpcConfiguration,
+                http2Configuration: http2Configuration,
                 sslContext: sslContext,
-                responder: responder
+                responder: responder,
+                logger: logger
             )
         }
     }

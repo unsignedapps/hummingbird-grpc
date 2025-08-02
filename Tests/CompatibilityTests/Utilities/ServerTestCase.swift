@@ -37,7 +37,7 @@ class ServerTestCase: XCTestCase {
         file: StaticString = #file,
         line: UInt = #line
     ) async throws -> Application<RouterResponder<BasicRequestContext>> {
-        guard await SampleCertificate.server.isExpired == false else {
+        guard SampleCertificate.server.isExpired == false else {
             throw ServerError.certificateExpired
         }
 
@@ -47,7 +47,7 @@ class ServerTestCase: XCTestCase {
         var server = GRPCServerBuilder()
         serverBuilder(&server)
 
-        let app = try await Application(
+        let app = try Application(
             router: router,
             server: .grpc(
                 serverBuilder: server,
@@ -81,41 +81,47 @@ class ServerTestCase: XCTestCase {
         return app
     }
 
-    func makeAsyncGRPCClient(app: Application<RouterResponder<BasicRequestContext>>, port: Int) async throws -> Echo_EchoAsyncClient {
-        guard await SampleCertificate.ca.isExpired == false else {
-            throw ServerError.certificateExpired
-        }
-
-        let channel = await ClientConnection.usingPlatformAppropriateTLS(for: app.eventLoopGroup)
-            .withTLS(trustRoots: .certificates([
-                SampleCertificate.ca.certificate,
-            ]))
-            .withTLS(certificateVerification: .fullVerification)
-            .connect(host: "localhost", port: port)
-        return Echo_EchoAsyncClient(channel: channel)
-    }
-
-    func makeNIOGRPCClient(app: Application<RouterResponder<BasicRequestContext>>, port: Int) async throws -> Echo_EchoNIOClient {
-        guard await SampleCertificate.ca.isExpired == false else {
-            throw ServerError.certificateExpired
-        }
-
-        let channel = await ClientConnection.usingPlatformAppropriateTLS(for: app.eventLoopGroup)
-            .withTLS(trustRoots: .certificates([
-                SampleCertificate.ca.certificate,
-            ]))
-            .withTLS(certificateVerification: .fullVerification)
-            .connect(host: "localhost", port: port)
-        return Echo_EchoNIOClient(channel: channel)
-    }
-
-    func makeHTTPClient(_ version: HTTPClient.Configuration.HTTPVersion) async throws -> HTTPClient {
-        guard await SampleCertificate.ca.isExpired == false else {
+    private func makeGRPCClient(
+        app: Application<RouterResponder<BasicRequestContext>>,
+        port: Int,
+        protocol proto: GRPCProtocol
+    ) throws -> ClientConnection {
+        guard SampleCertificate.ca.isExpired == false else {
             throw ServerError.certificateExpired
         }
 
         var tls = TLSConfiguration.makeClientConfiguration()
-        tls.trustRoots = await .certificates([ SampleCertificate.ca.certificate ])
+        tls.certificateVerification = .fullVerification
+        tls.trustRoots = .certificates([ SampleCertificate.ca.certificate ])
+        tls.applicationProtocols = proto.alpn
+        var configuration = ClientConnection.Configuration.default(target: .host("localhost", port: port), eventLoopGroup: app.eventLoopGroup)
+        configuration.tlsConfiguration = .makeClientConfigurationBackedByNIOSSL(configuration: tls)
+        return ClientConnection(configuration: configuration)
+    }
+
+    func makeAsyncGRPCClient(
+        app: Application<RouterResponder<BasicRequestContext>>,
+        port: Int,
+        protocol proto: GRPCProtocol
+    ) async throws -> Echo_EchoAsyncClient {
+        try Echo_EchoAsyncClient(channel: makeGRPCClient(app: app, port: port, protocol: proto))
+    }
+
+    func makeNIOGRPCClient(
+        app: Application<RouterResponder<BasicRequestContext>>,
+        port: Int,
+        protocol proto: GRPCProtocol
+    ) async throws -> Echo_EchoNIOClient {
+        try Echo_EchoNIOClient(channel: makeGRPCClient(app: app, port: port, protocol: proto))
+    }
+
+    func makeHTTPClient(_ version: HTTPClient.Configuration.HTTPVersion) async throws -> HTTPClient {
+        guard SampleCertificate.ca.isExpired == false else {
+            throw ServerError.certificateExpired
+        }
+
+        var tls = TLSConfiguration.makeClientConfiguration()
+        tls.trustRoots = .certificates([ SampleCertificate.ca.certificate ])
         tls.certificateVerification = .none
 
         var configuration = HTTPClient.Configuration(tlsConfiguration: tls)
@@ -125,6 +131,18 @@ class ServerTestCase: XCTestCase {
     }
 
 
+}
+
+enum GRPCProtocol {
+    case http2
+    case grpcExp
+
+    var alpn: [String] {
+        switch self {
+        case .grpcExp:          [ "grpc-exp" ]
+        case .http2:            [ "h2" ]
+        }
+    }
 }
 
 enum ServerError: Error {

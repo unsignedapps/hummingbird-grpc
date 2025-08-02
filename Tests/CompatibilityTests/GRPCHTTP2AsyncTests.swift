@@ -17,12 +17,13 @@ import NIOPosix
 import NIOSSL
 import XCTest
 
-
 // These tests function as compatibility tests with grpc-swift and its code generator
 // by starting a HBApplication with gRPC support, and then using a standard grpc-swift
 // client to connect and interact with it.
 
-final class GRPCMethodAsyncTests: ServerTestCase {
+// These tests exercise GRPC over HTTP2 support.
+
+final class GRPCHTTP2AsyncTests: ServerTestCase {
 
     func testUnaryCall() async throws {
 
@@ -36,7 +37,7 @@ final class GRPCMethodAsyncTests: ServerTestCase {
         })
 
         // AND GIVEN a grpc-swift client
-        let client = try await makeAsyncGRPCClient(app: app, port: 9010)
+        let client = try await makeAsyncGRPCClient(app: app, port: 9010, protocol: .http2)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -63,7 +64,7 @@ final class GRPCMethodAsyncTests: ServerTestCase {
         })
 
         // AND GIVEN a grpc-swift client
-        let client = try await makeAsyncGRPCClient(app: app, port: 9011)
+        let client = try await makeAsyncGRPCClient(app: app, port: 9011, protocol: .http2)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -95,7 +96,7 @@ final class GRPCMethodAsyncTests: ServerTestCase {
         })
 
         // AND GIVEN a grpc-swift client
-        let client = try await makeAsyncGRPCClient(app: app, port: 9012)
+        let client = try await makeAsyncGRPCClient(app: app, port: 9012, protocol: .http2)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -130,7 +131,7 @@ final class GRPCMethodAsyncTests: ServerTestCase {
         })
 
         // AND GIVEN a grpc-swift client
-        let client = try await makeAsyncGRPCClient(app: app, port: 9013)
+        let client = try await makeAsyncGRPCClient(app: app, port: 9013, protocol: .http2)
 
         // AND GIVEN a promise that the response will be received
         let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)

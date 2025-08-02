@@ -27,8 +27,9 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/unsignedapps/grpc-swift.git", from: "1.23.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.27.0"),
-        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.21.2"),
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.26.1"),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.15.0"),
+        .package(url: "https://github.com/apple/swift-http-types.git", exact: "1.4.0"),
         .package(url: "https://github.com/apple/swift-nio-extras.git", from: "1.26.0"),     // For Sendable
     ],
 
@@ -40,6 +41,7 @@ let package = Package(
             name: "HummingbirdGRPC",
             dependencies: [
                 .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdCore", package: "hummingbird"),
                 .product(name: "HummingbirdHTTP2", package: "hummingbird"),

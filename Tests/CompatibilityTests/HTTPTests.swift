@@ -39,10 +39,14 @@ final class HTTPTests: ServerTestCase {
 
         // WHEN we make a request
         // THEN it should succeed
-        let response = try await client.post(url: "https://127.0.0.1:8081/echo", body: .string("Test HTTP/2 Request!")).get()
+        var request = HTTPClientRequest(url: "https://127.0.0.1:8081/echo")
+        request.method = .POST
+        request.body = .bytes(.init(string: "Test HTTP/2 Request!"))
+        let response = try await client.execute(request, timeout: .seconds(60))
 
         // AND the response should match
-        XCTAssertEqual(response.bodyString, "HTTP Response: Test HTTP/2 Request!")
+        let body = try await response.body.collect(upTo: .max)
+        XCTAssertEqual(body.getString(at: 0, length: body.readableBytes), "HTTP Response: Test HTTP/2 Request!")
 
     }
 
@@ -65,10 +69,14 @@ final class HTTPTests: ServerTestCase {
 
         // WHEN we make a request
         // THEN it should succeed
-        let response = try await client.post(url: "https://127.0.0.1:8082/echo", body: .string("Test HTTP/1.1 Request!")).get()
+        var request = HTTPClientRequest(url: "https://127.0.0.1:8082/echo")
+        request.method = .POST
+        request.body = .bytes(.init(string: "Test HTTP/1.1 Request!"))
+        let response = try await client.execute(request, timeout: .seconds(60))
 
         // AND the response should match
-        XCTAssertEqual(response.bodyString, "HTTP Response: Test HTTP/1.1 Request!")
+        let body = try await response.body.collect(upTo: .max)
+        XCTAssertEqual(body.getString(at: 0, length: body.readableBytes), "HTTP Response: Test HTTP/1.1 Request!")
 
     }
 

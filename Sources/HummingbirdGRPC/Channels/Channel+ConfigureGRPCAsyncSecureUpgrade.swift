@@ -24,17 +24,15 @@ extension Channel {
         let handler = NIOTypedApplicationProtocolNegotiationHandler<NegotiatedProtocol<HTTP1Output, HTTP2Output, GRPCOutput>>() { result in
             switch result {
             case .negotiated("grpc-exp"):
-                // Successful negotiation of GRPC. Let the user configure the pipeline.
-                return grpcConnectionInitializer(self).map { output in .grpc(output) }
+                return grpcConnectionInitializer(self).map { .grpc($0) }
+
             case .negotiated("h2"):
-                // Successful upgrade to HTTP/2. Let the user configure the pipeline.
-                return http2ConnectionInitializer(self).map { output in .http2(output) }
+                return http2ConnectionInitializer(self).map { .http2($0) }
+
             case .negotiated("http/1.1"), .fallback:
                 // Explicit or implicit HTTP/1.1 choice.
-                return self.pipeline.configureHTTPServerPipeline()
-                    .flatMap { _ in
-                        http1ConnectionInitializer(self).map { output in .http1_1(output) }
-                    }
+                return http1ConnectionInitializer(self).map { .http1_1($0) }
+
             case .negotiated:
                 // We negotiated something that isn't HTTP/1.1. This is a bad scene, and is a good indication
                 // of a user configuration error. We're going to close the connection directly.
@@ -42,18 +40,16 @@ extension Channel {
             }
         }
 
-        return self.pipeline
-            .addHandler(handler)
+        return self.pipeline.addHandler(handler)
             .flatMap { _ in
                 self.pipeline.handler(type: NIOTypedApplicationProtocolNegotiationHandler<NegotiatedProtocol<HTTP1Output, HTTP2Output, GRPCOutput>>.self)
-                    .map { handler in
-                        handler.protocolNegotiationResult
-                    }
+                    .map { $0.protocolNegotiationResult }
             }
     }
 
 }
 
+/// The final protocol that was negotiated
 enum NegotiatedProtocol<HTTP1Output, HTTP2Output, GRPCOutput>: Sendable
 where HTTP1Output: Sendable, HTTP2Output: Sendable, GRPCOutput: Sendable {
     /// Protocol negotiation resulted in the connection using HTTP/1.1.
