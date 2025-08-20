@@ -14,7 +14,7 @@ SIZE=2048
 
 # CA
 openssl genrsa -out ca.key $SIZE
-openssl req -new -x509 -days 365 -key ca.key -out ca.crt -subj "/CN=some-ca"
+openssl req -new -x509 -verbose -days 365 -key ca.key -out ca.crt -subj "/CN=some-ca"
 
 # Other CA
 openssl genrsa -out other-ca.key $SIZE
@@ -22,7 +22,7 @@ openssl req -new -x509 -days 365 -key other-ca.key -out other-ca.crt -subj "/CN=
 
 # Server certs (localhost)
 openssl genrsa -out server-localhost.key $SIZE
-openssl req -new -key server-localhost.key -out server-localhost.csr -subj "/CN=localhost"
+openssl req -new -verbose -key server-localhost.key -out server-localhost.csr -subj "/CN=localhost"
 openssl x509 -req -days 365 -in server-localhost.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out server-localhost.crt
 openssl x509 -req -days 365 -in server-localhost.csr -CA other-ca.crt -CAkey other-ca.key -set_serial 01 -out server-localhost-other-ca.crt
 
