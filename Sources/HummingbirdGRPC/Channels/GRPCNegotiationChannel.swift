@@ -48,17 +48,34 @@ public struct GRPCNegotiationChannel: HTTPChannelHandler {
         public let channel: Channel
     }
 
+    // MARK: - Properties
+
     private let sslContext: NIOSSLContext
-    public var responder: Responder {
-        http1.responder
-    }
+    private let serverBuilder: GRPCServerBuilder
+    private let grpcConfiguration: HTTPServerBuilder.GRPCConfiguration
+    private let http2Configuration: HTTP2ChannelConfiguration
+    public let responder: Responder
+    private let logger: Logger
 
     // MARK: - Channels
 
-    private let http1: HTTP1Channel
-    private let http2: GRPCHTTP2Channel
-    private let bleh: HTTP2Channel
-    private let grpc: GRPCProtocolChannel
+    private var http1: HTTP1Channel {
+        HTTP1Channel(responder: responder, configuration: http2Configuration.streamConfiguration)
+    }
+
+    private var http2: GRPCHTTP2Channel {
+        GRPCHTTP2Channel(
+            serverBuilder: serverBuilder,
+            grpcConfiguration: grpcConfiguration,
+            http2Configuration: http2Configuration,
+            responder: responder,
+            logger: logger
+        )
+    }
+
+    private var grpc: GRPCProtocolChannel {
+        GRPCProtocolChannel(serverBuilder: serverBuilder, grpcConfiguration: grpcConfiguration, logger: logger)
+    }
 
     // MARK: - Initialisation
 
@@ -70,17 +87,12 @@ public struct GRPCNegotiationChannel: HTTPChannelHandler {
         responder: @escaping HTTPChannelHandler.Responder,
         logger: Logger
     ) {
+        self.serverBuilder = serverBuilder
+        self.grpcConfiguration = grpcConfiguration
+        self.http2Configuration = http2Configuration
         self.sslContext = sslContext
-        self.http1 = HTTP1Channel(responder: responder, configuration: http2Configuration.streamConfiguration)
-        self.http2 = GRPCHTTP2Channel(
-            serverBuilder: serverBuilder,
-            grpcConfiguration: grpcConfiguration,
-            http2Configuration: http2Configuration,
-            responder: responder,
-            logger: logger
-        )
-        self.grpc = GRPCProtocolChannel(serverBuilder: serverBuilder, grpcConfiguration: grpcConfiguration, logger: logger)
-        self.bleh = HTTP2Channel(responder: responder, configuration: http2Configuration)
+        self.responder = responder
+        self.logger = logger
     }
 
     /// Setup child channel for HTTP1 with HTTP2 + GRPC upgrades
@@ -128,7 +140,7 @@ public struct GRPCNegotiationChannel: HTTPChannelHandler {
                 await self.http2.handle(value: http2, logger: logger)
             case .grpc:
                 // Should not be handled by us, should have been handled by grpc-swift
-                logger.error("ATtempted to handle inbound gRPC connection.")
+                break
             }
         } catch {
             logger.debug("Error getting HTTP2 upgrade negotiated value: \(error)")

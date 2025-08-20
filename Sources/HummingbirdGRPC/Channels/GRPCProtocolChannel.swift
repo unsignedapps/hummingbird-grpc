@@ -28,7 +28,26 @@ public struct GRPCProtocolChannel: ServerChildChannel {
         public let channel: Channel
     }
 
-    private let grpcServer: HTTP2ToRawGRPCServerCodec
+    // MARK: - Properties
+
+    private let serverBuilder: GRPCServerBuilder
+    private let grpcConfiguration: HTTPServerBuilder.GRPCConfiguration
+    private let logger: Logger
+
+    // MARK: - Channels
+
+    private var grpcServer: HTTP2ToRawGRPCServerCodec {
+        HTTP2ToRawGRPCServerCodec(
+            servicesByName: serverBuilder.servicesByName(),
+            encoding: grpcConfiguration.encoding,
+            errorDelegate: grpcConfiguration.errorDelegate,
+            normalizeHeaders: grpcConfiguration.normalizeHeaders,
+            maximumReceiveMessageLength: grpcConfiguration.maximumReceiveMessageLength,
+            logger: logger
+        )
+    }
+
+    // MARK: - Initialisation
 
     ///  Initialize HTTP2Channel
     /// - Parameters:
@@ -39,15 +58,12 @@ public struct GRPCProtocolChannel: ServerChildChannel {
         grpcConfiguration: HTTPServerBuilder.GRPCConfiguration = .init(),
         logger: Logger
     ) {
-        self.grpcServer = HTTP2ToRawGRPCServerCodec(
-            servicesByName: serverBuilder.servicesByName(),
-            encoding: grpcConfiguration.encoding,
-            errorDelegate: grpcConfiguration.errorDelegate,
-            normalizeHeaders: grpcConfiguration.normalizeHeaders,
-            maximumReceiveMessageLength: grpcConfiguration.maximumReceiveMessageLength,
-            logger: logger
-        )
+        self.serverBuilder = serverBuilder
+        self.grpcConfiguration = grpcConfiguration
+        self.logger = logger
     }
+
+    // MARK: - ServerChildChannel Conformance
 
     /// Setup child channel for HTTP1 with HTTP2 upgrade
     /// - Parameters:

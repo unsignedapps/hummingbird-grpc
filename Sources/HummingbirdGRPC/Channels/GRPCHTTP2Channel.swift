@@ -35,9 +35,32 @@ public struct GRPCHTTP2Channel: ServerChildChannel {
         public let channel: Channel
     }
 
-    private let http2StreamChannel: HTTP2StreamChannel
+    // MARK: - Properties
+
+    private let serverBuilder: GRPCServerBuilder
+    private let grpcConfiguration: HTTPServerBuilder.GRPCConfiguration
     private let http2Configuration: HTTP2ChannelConfiguration
-    private let grpcServer: HTTP2ToRawGRPCServerCodec
+    private let responder: HTTPChannelHandler.Responder
+    private let logger: Logger
+
+    // MARK: - Channels
+
+    private var http2StreamChannel: HTTP2StreamChannel {
+        HTTP2StreamChannel(responder: responder, configuration: http2Configuration.streamConfiguration)
+    }
+
+    private var grpcServer: HTTP2ToRawGRPCServerCodec {
+        HTTP2ToRawGRPCServerCodec(
+            servicesByName: serverBuilder.servicesByName(),
+            encoding: grpcConfiguration.encoding,
+            errorDelegate: grpcConfiguration.errorDelegate,
+            normalizeHeaders: grpcConfiguration.normalizeHeaders,
+            maximumReceiveMessageLength: grpcConfiguration.maximumReceiveMessageLength,
+            logger: logger
+        )
+    }
+
+    // MARK: - Initialisation
 
     ///  Initialize HTTP2Channel
     /// - Parameters:
@@ -50,17 +73,14 @@ public struct GRPCHTTP2Channel: ServerChildChannel {
         responder: @escaping HTTPChannelHandler.Responder,
         logger: Logger
     ) {
+        self.serverBuilder = serverBuilder
+        self.grpcConfiguration = grpcConfiguration
         self.http2Configuration = http2Configuration
-        self.http2StreamChannel = HTTP2StreamChannel(responder: responder, configuration: http2Configuration.streamConfiguration)
-        self.grpcServer = HTTP2ToRawGRPCServerCodec(
-            servicesByName: serverBuilder.servicesByName(),
-            encoding: grpcConfiguration.encoding,
-            errorDelegate: grpcConfiguration.errorDelegate,
-            normalizeHeaders: grpcConfiguration.normalizeHeaders,
-            maximumReceiveMessageLength: grpcConfiguration.maximumReceiveMessageLength,
-            logger: logger
-        )
+        self.responder = responder
+        self.logger = logger
     }
+
+    // MARK: - ServerChildChannel Conformance
 
     /// Setup child channel for HTTP1 with HTTP2 upgrade
     /// - Parameters:

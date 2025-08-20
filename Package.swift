@@ -45,6 +45,7 @@ let package = Package(
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdCore", package: "hummingbird"),
                 .product(name: "HummingbirdHTTP2", package: "hummingbird"),
+                .product(name: "NIOExtras", package: "swift-nio-extras"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
             ]
         ),
